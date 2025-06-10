@@ -17,4 +17,5 @@ export const useFavoritesStore = defineStore('favorites', {
 			this.rockets = []
 		},
 	},
+	persist: true,
 })

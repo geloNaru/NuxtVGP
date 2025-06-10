@@ -20,6 +20,18 @@
 						/>
 					</v-col>
 					<v-col cols="12" md="4">
+						<v-text-field
+							v-model.number="limit"
+							label="Number of launches"
+							type="number"
+							min="1"
+							max="100"
+							variant="outlined"
+							density="compact"
+							prepend-inner-icon="mdi-format-list-numbered"
+						/>
+					</v-col>
+					<v-col cols="12" md="4">
 						<v-select
 							v-model="sortOrder"
 							:items="sortOptions"
@@ -74,11 +86,6 @@
 			</v-card-text>
 		</v-card>
 
-		<p>
-			There are {{ processedLaunches?.length || 0 }} launches{{
-				selectedYear !== 'all' ? ` in ${selectedYear}` : ''
-			}}.
-		</p>
 		<v-table>
 			<thead>
 				<tr>
@@ -148,9 +155,11 @@
 </template>
 
 <script setup lang="ts">
-const query = gql`
-	query getLaunches {
-		launchesPast(limit: 10, sort: "launch_date_local", order: "desc") {
+const limit = ref(10)
+
+const launchesQuery = gql`
+	query getLaunches($limit: Int!) {
+		launchesPast(limit: $limit, sort: "launch_date_local", order: "desc") {
 			id
 			mission_name
 			launch_date_local
@@ -170,7 +179,13 @@ const query = gql`
 	}
 `
 
-const { data } = useAsyncQuery(query)
+const variables = computed(() => ({ limit: limit.value }))
+const { data, refresh } = await useAsyncQuery(launchesQuery, variables)
+
+watch(limit, () => {
+	refresh()
+})
+
 const allLaunches = computed(() => data.value?.launchesPast ?? [])
 
 const { selectedYear, filterLaunchesByYear, getAvailableYears, resetFilters } = useLaunchFilter()
@@ -205,6 +220,7 @@ const hasActiveFilters = computed(() => {
 })
 
 function resetAll() {
+	limit.value = 10
 	resetFilters()
 	resetSort()
 }
@@ -220,8 +236,4 @@ function formatDate(dateStr: string) {
 		hour12: false,
 	})
 }
-
-watchEffect(() => {
-	console.log(`list all launches:`, allLaunches.value)
-})
 </script>

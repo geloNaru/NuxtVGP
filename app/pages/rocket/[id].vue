@@ -1,17 +1,20 @@
 <template>
 	<v-container>
-		<div v-if="pending" class="d-flex justify-center align-center" style="min-height: 400px">
-			<div class="text-center">
-				<v-progress-circular :size="70" :width="7" color="primary" indeterminate />
-				<p class="mt-4 text-h6">Loading rocket details...</p>
-			</div>
-		</div>
+		<LoadingState v-if="pending" message="Loading rocket details..." />
 
 		<div v-else-if="rocket">
 			<v-card class="mb-6" elevation="3">
 				<v-card-title class="text-h4 pa-6 bg-primary text-white">
 					<v-icon icon="mdi-rocket" class="me-3" size="large" />
 					{{ rocket.name }}
+					<v-btn
+						:color="isFavorite ? 'warning' : 'secondary'"
+						variant="flat"
+						:prepend-icon="isFavorite ? 'mdi-star' : 'mdi-star-outline'"
+						@click="toggleFavorite"
+					>
+						{{ isFavorite ? 'Remove Favorite' : 'Add to Favorites' }}
+					</v-btn>
 				</v-card-title>
 				<v-card-text class="pa-6">
 					<p class="text-body-1 text-medium-emphasis">
@@ -98,34 +101,36 @@
 
 			<v-row class="mt-4">
 				<v-col cols="6" sm="3">
-					<v-card elevation="1" class="text-center pa-4">
-						<v-icon icon="mdi-arrow-up" color="success" size="large" class="mb-2" />
-						<div class="text-h6">{{ rocket.height?.meters || 'N/A' }}</div>
-						<div class="text-caption text-medium-emphasis">Meters Height</div>
-					</v-card>
+					<StatCard
+						icon="mdi-arrow-up"
+						color="success"
+						:value="rocket.height?.meters || 'N/A'"
+						label="Meters Height"
+					/>
 				</v-col>
 				<v-col cols="6" sm="3">
-					<v-card elevation="1" class="text-center pa-4">
-						<v-icon icon="mdi-diameter" color="info" size="large" class="mb-2" />
-						<div class="text-h6">{{ rocket.diameter?.meters || 'N/A' }}</div>
-						<div class="text-caption text-medium-emphasis">Meters Diameter</div>
-					</v-card>
+					<StatCard
+						icon="mdi-diameter"
+						color="info"
+						:value="rocket.diameter?.meters || 'N/A'"
+						label="Meters Diameter"
+					/>
 				</v-col>
 				<v-col cols="6" sm="3">
-					<v-card elevation="1" class="text-center pa-4">
-						<v-icon icon="mdi-weight" color="warning" size="large" class="mb-2" />
-						<div class="text-h6">{{ formatWeightShort(rocket.mass?.kg) }}</div>
-						<div class="text-caption text-medium-emphasis">Mass</div>
-					</v-card>
+					<StatCard
+						icon="mdi-weight"
+						color="warning"
+						:value="formatWeightShort(rocket.mass?.kg)"
+						label="Mass"
+					/>
 				</v-col>
 				<v-col cols="6" sm="3">
-					<v-card elevation="1" class="text-center pa-4">
-						<v-icon icon="mdi-layers" color="primary" size="large" class="mb-2" />
-						<div class="text-h6">{{ rocket.stages }}</div>
-						<div class="text-caption text-medium-emphasis">
-							Stage{{ rocket.stages > 1 ? 's' : '' }}
-						</div>
-					</v-card>
+					<StatCard
+						icon="mdi-layers"
+						color="primary"
+						:value="rocket.stages"
+						:label="`Stage${rocket.stages > 1 ? 's' : ''}`"
+					/>
 				</v-col>
 			</v-row>
 
@@ -141,18 +146,21 @@
 			</div>
 		</div>
 
-		<v-card v-else class="text-center pa-8" elevation="2">
-			<v-icon icon="mdi-alert-circle" size="64" color="error" class="mb-4" />
-			<h3 class="text-h5 mb-2">Rocket Not Found</h3>
-			<p class="text-body-1 text-medium-emphasis mb-4">
-				The rocket you're looking for doesn't exist or couldn't be loaded.
-			</p>
-			<v-btn color="primary" variant="outlined" @click="$router.back()">Go Back</v-btn>
-		</v-card>
+		<EmptyState
+			v-else
+			icon="mdi-alert-circle"
+			icon-color="error"
+			title="Rocket Not Found"
+			description="The rocket you're looking for doesn't exist or couldn't be loaded."
+			action-text="Go Back"
+			@action="$router.back()"
+		/>
 	</v-container>
 </template>
-
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useFavoritesStore } from '@/stores/favorite-rocket'
+const favoritesStore = useFavoritesStore()
 const route = useRoute()
 const rocketId = route.params.id
 
@@ -178,6 +186,27 @@ const query = gql`
 
 const { data, pending } = await useAsyncQuery(query, { id: rocketId })
 const rocket = computed(() => data.value?.rocket)
+
+const isFavorite = computed(() => favoritesStore.rockets.some((r) => r.id === rocketId))
+
+function toggleFavorite() {
+	if (!rocket.value) return
+	if (isFavorite.value) {
+		favoritesStore.removeRocket(rocketId)
+		snackbarMsg.value = 'Removed from favorites'
+	} else {
+		favoritesStore.addRocket({
+			id: rocketId,
+			name: rocket.value.name,
+			description: rocket.value.description,
+			first_flight: rocket.value.first_flight,
+			height: rocket.value.height,
+			diameter: rocket.value.diameter,
+			mass: rocket.value.mass,
+			stages: rocket.value.stages,
+		})
+	}
+}
 
 function formatDate(dateStr: string) {
 	if (!dateStr) return 'N/A'

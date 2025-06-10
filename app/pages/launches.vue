@@ -2,89 +2,20 @@
 	<v-container>
 		<h1 class="my-5">SpaceX Apollo System</h1>
 
-		<v-card class="mb-6" elevation="2">
-			<v-card-title>
-				<v-icon icon="mdi-filter-variant" class="me-2" />
-				Filter & Sort Options
-			</v-card-title>
-			<v-card-text>
-				<v-row>
-					<v-col cols="12" md="4">
-						<v-select
-							v-model="selectedYear"
-							:items="yearFilterOptions"
-							label="Filter by Year"
-							variant="outlined"
-							density="compact"
-							prepend-inner-icon="mdi-calendar"
-						/>
-					</v-col>
-					<v-col cols="12" md="4">
-						<v-text-field
-							v-model.number="limit"
-							label="Number of launches"
-							type="number"
-							min="1"
-							max="100"
-							variant="outlined"
-							density="compact"
-							prepend-inner-icon="mdi-format-list-numbered"
-						/>
-					</v-col>
-					<v-col cols="12" md="4">
-						<v-select
-							v-model="sortOrder"
-							:items="sortOptions"
-							label="Sort by Date"
-							variant="outlined"
-							density="compact"
-							prepend-inner-icon="mdi-sort"
-						/>
-					</v-col>
-					<v-col cols="12" md="4" class="d-flex align-center">
-						<v-btn
-							variant="outlined"
-							color="primary"
-							prepend-icon="mdi-refresh"
-							@click="resetAll"
-						>
-							Reset
-						</v-btn>
-						<v-spacer />
-						<div class="text-body-2 text-medium-emphasis">
-							Showing {{ processedLaunches.length }} of {{ allLaunches.length }} launches
-						</div>
-					</v-col>
-				</v-row>
-				<v-row v-if="hasActiveFilters" class="mt-2">
-					<v-col cols="12">
-						<div class="d-flex align-center flex-wrap ga-2">
-							<span class="text-body-2 text-medium-emphasis me-2">Active filters:</span>
-							<v-chip
-								v-if="selectedYear !== 'all'"
-								size="small"
-								color="primary"
-								closable
-								@click:close="selectedYear = 'all'"
-							>
-								Year: {{ selectedYear }}
-							</v-chip>
-							<v-chip
-								size="small"
-								color="secondary"
-								:prepend-icon="
-									sortOrder === 'desc'
-										? 'mdi-sort-calendar-descending'
-										: 'mdi-sort-calendar-ascending'
-								"
-							>
-								{{ sortOrder === 'desc' ? 'Newest First' : 'Oldest First' }}
-							</v-chip>
-						</div>
-					</v-col>
-				</v-row>
-			</v-card-text>
-		</v-card>
+		<LaunchFilters
+			:selected-year="selectedYear"
+			:limit="limit"
+			:sort-order="sortOrder"
+			:year-filter-options="yearFilterOptions"
+			:sort-options="sortOptions"
+			:filtered-count="processedLaunches.length"
+			:total-count="allLaunches.length"
+			:has-active-filters="hasActiveFilters"
+			@update:selected-year="selectedYear = $event"
+			@update:limit="limit = $event"
+			@update:sort-order="sortOrder = $event"
+			@reset="resetAll"
+		/>
 
 		<v-table>
 			<thead>
@@ -143,14 +74,14 @@
 			</tbody>
 		</v-table>
 
-		<v-card v-if="processedLaunches.length === 0 && allLaunches.length > 0" class="mt-6 text-center pa-8">
-			<v-icon icon="mdi-rocket" size="64" class="text-medium-emphasis mb-4" />
-			<h3 class="text-h6 mb-2">No launches found</h3>
-			<p class="text-body-2 text-medium-emphasis mb-4">
-				No launches found for the selected filters. Try adjusting your criteria.
-			</p>
-			<v-btn color="primary" variant="outlined" @click="resetAll">Clear Filters</v-btn>
-		</v-card>
+		<EmptyState
+			v-if="processedLaunches.length === 0 && allLaunches.length > 0"
+			icon="mdi-rocket"
+			title="No launches found"
+			description="No launches found for the selected filters. Try adjusting your criteria."
+			action-text="Clear Filters"
+			@action="resetAll"
+		/>
 	</v-container>
 </template>
 

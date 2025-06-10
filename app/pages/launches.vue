@@ -12,7 +12,7 @@
 			:total-count="allLaunches.length"
 			:has-active-filters="hasActiveFilters"
 			@update:selected-year="selectedYear = $event"
-			@update:limit="limit = $event"
+			@update:limit="limit = Number($event as number)"
 			@update:sort-order="sortOrder = $event"
 			@reset="resetAll"
 		/>

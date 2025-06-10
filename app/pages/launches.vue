@@ -1,8 +1,7 @@
 <template>
 	<v-container>
-		<h1 class="my-5">SpaceX Launches Apollo System</h1>
+		<h1 class="my-5">SpaceX Apollo System</h1>
 
-		<!-- Filter and Sort Controls -->
 		<v-card class="mb-6" elevation="2">
 			<v-card-title>
 				<v-icon icon="mdi-filter-variant" class="me-2" />
@@ -30,7 +29,7 @@
 							prepend-inner-icon="mdi-sort"
 						/>
 					</v-col>
-					<v-col cols="12" md="4" class="d-flex align-top">
+					<v-col cols="12" md="4" class="d-flex align-center">
 						<v-btn
 							variant="outlined"
 							color="primary"
@@ -40,7 +39,7 @@
 							Reset
 						</v-btn>
 						<v-spacer />
-						<div class="text-body-2 text-medium-emphasis align-self-end">
+						<div class="text-body-2 text-medium-emphasis">
 							Showing {{ processedLaunches.length }} of {{ allLaunches.length }} launches
 						</div>
 					</v-col>
@@ -85,7 +84,9 @@
 			<thead>
 				<tr>
 					<th class="text-left">Mission Name</th>
-					<th class="text-left">Launch Date</th>
+					<th class="text-left">
+						<div class="d-flex align-center">Launch Date</div>
+					</th>
 					<th class="text-left">Launch Site</th>
 					<th class="text-left">Rocket Name</th>
 					<th class="text-left">Details</th>
@@ -124,7 +125,6 @@
 			</tbody>
 		</v-table>
 
-		<!-- Empty State -->
 		<v-card v-if="processedLaunches.length === 0 && allLaunches.length > 0" class="mt-6 text-center pa-8">
 			<v-icon icon="mdi-rocket" size="64" class="text-medium-emphasis mb-4" />
 			<h3 class="text-h6 mb-2">No launches found</h3>
@@ -132,46 +132,6 @@
 				No launches found for the selected filters. Try adjusting your criteria.
 			</p>
 			<v-btn color="primary" variant="outlined" @click="resetAll">Clear Filters</v-btn>
-		</v-card>
-
-		<!-- Statistics Summary -->
-		<v-card class="mt-6" elevation="1">
-			<v-card-title>
-				<v-icon icon="mdi-chart-bar" class="me-2" />
-				Summary Statistics
-			</v-card-title>
-			<v-card-text>
-				<v-row>
-					<v-col cols="6" md="3">
-						<div class="text-center">
-							<div class="text-h4 text-primary font-weight-bold">{{ allLaunches.length }}</div>
-							<div class="text-body-2 text-medium-emphasis">Total Launches</div>
-						</div>
-					</v-col>
-					<v-col cols="6" md="3">
-						<div class="text-center">
-							<div class="text-h4 text-success font-weight-bold">
-								{{ processedLaunches.length }}
-							</div>
-							<div class="text-body-2 text-medium-emphasis">Filtered Results</div>
-						</div>
-					</v-col>
-					<v-col cols="6" md="3">
-						<div class="text-center">
-							<div class="text-h4 text-info font-weight-bold">{{ availableYears.length }}</div>
-							<div class="text-body-2 text-medium-emphasis">Years Available</div>
-						</div>
-					</v-col>
-					<v-col cols="6" md="3">
-						<div class="text-center">
-							<div class="text-h4 text-warning font-weight-bold">
-								{{ sortOrder === 'desc' ? 'DESC' : 'ASC' }}
-							</div>
-							<div class="text-body-2 text-medium-emphasis">Sort Order</div>
-						</div>
-					</v-col>
-				</v-row>
-			</v-card-text>
 		</v-card>
 	</v-container>
 </template>
@@ -199,11 +159,9 @@ const query = gql`
 const { data } = useAsyncQuery(query)
 const allLaunches = computed(() => data.value?.launchesPast ?? [])
 
-// Use both composables separately
 const { selectedYear, filterLaunchesByYear, getAvailableYears, resetFilters } = useLaunchFilter()
 const { sortOrder, sortLaunchesByDate, resetSort } = useLaunchSort()
 
-// Process launches by combining filter and sort
 const processedLaunches = computed(() => {
 	const filtered = filterLaunchesByYear(allLaunches.value)
 	return sortLaunchesByDate(filtered)
@@ -232,7 +190,6 @@ const hasActiveFilters = computed(() => {
 	return selectedYear.value !== 'all' || sortOrder.value !== 'desc'
 })
 
-// Methods
 function resetAll() {
 	resetFilters()
 	resetSort()

@@ -44,7 +44,6 @@
 						</div>
 					</v-col>
 				</v-row>
-				<!-- Active Filters Display -->
 				<v-row v-if="hasActiveFilters" class="mt-2">
 					<v-col cols="12">
 						<div class="d-flex align-center flex-wrap ga-2">
@@ -111,7 +110,19 @@
 							'N/A'
 						}}
 					</td>
-					<td>{{ launch.rocket?.rocket_name }}</td>
+					<td>
+						<NuxtLink
+							v-if="launch.rocket?.rocket?.id"
+							:to="`/rocket/${launch.rocket.rocket.id}`"
+							class="text-primary"
+						>
+							{{ launch.rocket?.rocket_name }}
+						</NuxtLink>
+						<span v-else>
+							{{ launch.rocket?.rocket_name || 'N/A' }}
+						</span>
+					</td>
+
 					<td>
 						<span
 							class="text-truncate d-inline-block"
@@ -139,7 +150,7 @@
 <script setup lang="ts">
 const query = gql`
 	query getLaunches {
-		launchesPast(limit: 50, sort: "launch_date_local", order: "desc") {
+		launchesPast(limit: 10, sort: "launch_date_local", order: "desc") {
 			id
 			mission_name
 			launch_date_local
@@ -150,6 +161,9 @@ const query = gql`
 			}
 			rocket {
 				rocket_name
+				rocket {
+					id
+				}
 			}
 			details
 		}
@@ -206,4 +220,8 @@ function formatDate(dateStr: string) {
 		hour12: false,
 	})
 }
+
+watchEffect(() => {
+	console.log(`list all launches:`, allLaunches.value)
+})
 </script>

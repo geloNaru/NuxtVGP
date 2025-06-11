@@ -13,7 +13,7 @@
 			:has-active-filters="hasActiveFilters"
 			@update:selected-year="selectedYear = $event"
 			@update:limit="limit = Number($event as number)"
-			@update:sort-order="sortOrder = $event"
+			@update:sort-order="sortOrder = $event as 'asc' | 'desc'"
 			@reset="resetAll"
 		/>
 
@@ -88,6 +88,28 @@
 <script setup lang="ts">
 const limit = ref(10)
 
+type Launch = {
+	id: string
+	mission_name: string
+	launch_date_local: string
+	launch_site?: {
+		site_id?: string
+		site_name?: string
+		site_name_long?: string
+	}
+	rocket?: {
+		rocket_name?: string
+		rocket?: {
+			id?: string
+		}
+	}
+	details?: string
+}
+
+type LaunchesQueryResult = {
+	launchesPast: Launch[]
+}
+
 const launchesQuery = gql`
 	query getLaunches($limit: Int!) {
 		launchesPast(limit: $limit, sort: "launch_date_local", order: "desc") {
@@ -111,7 +133,7 @@ const launchesQuery = gql`
 `
 
 const variables = computed(() => ({ limit: limit.value }))
-const { data, refresh } = await useAsyncQuery(launchesQuery, variables)
+const { data, refresh } = await useAsyncQuery<LaunchesQueryResult>(launchesQuery, variables)
 
 watch(limit, () => {
 	refresh()

@@ -90,7 +90,7 @@
 									</template>
 									<v-list-item-title>Mass</v-list-item-title>
 									<v-list-item-subtitle>
-										{{ formatWeight(rocket.mass?.kg) }}
+										{{ rocket.mass?.kg != null ? formatWeight(rocket.mass.kg) : 'N/A' }}
 									</v-list-item-subtitle>
 								</v-list-item>
 							</v-list>
@@ -120,7 +120,7 @@
 					<StatCard
 						icon="mdi-weight"
 						color="warning"
-						:value="formatWeightShort(rocket.mass?.kg)"
+						:value="rocket.mass?.kg != null ? formatWeightShort(rocket.mass.kg) : 'N/A'"
 						label="Mass"
 					/>
 				</v-col>
@@ -157,12 +157,28 @@
 		/>
 	</v-container>
 </template>
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useFavoritesStore } from '@/stores/favorite-rocket'
+
 const favoritesStore = useFavoritesStore()
 const route = useRoute()
-const rocketId = route.params.id
+const rocketId = Array.isArray(route.params.id) ? route.params.id[0] : (route.params.id ?? '')
+
+type Rocket = {
+	name: string
+	description: string
+	first_flight: string
+	height: { meters: number | null }
+	diameter: { meters: number | null }
+	mass: { kg: number | null }
+	stages: number
+}
+
+type QueryResult = {
+	rocket: Rocket | null
+}
 
 const query = gql`
 	query getRocket($id: ID!) {
@@ -184,19 +200,24 @@ const query = gql`
 	}
 `
 
-const { data, pending } = await useAsyncQuery(query, { id: rocketId })
+const { data, pending } = await useAsyncQuery<QueryResult>(query, { id: rocketId })
 const rocket = computed(() => data.value?.rocket)
 
 const isFavorite = computed(() => favoritesStore.rockets.some((r) => r.id === rocketId))
 
+// Snackbar feedback
+const snackbar = ref(false)
+const snackbarMsg = ref('')
+
 function toggleFavorite() {
 	if (!rocket.value) return
+
 	if (isFavorite.value) {
-		favoritesStore.removeRocket(rocketId)
+		favoritesStore.removeRocket(rocketId as string)
 		snackbarMsg.value = 'Removed from favorites'
 	} else {
 		favoritesStore.addRocket({
-			id: rocketId,
+			id: rocketId as string,
 			name: rocket.value.name,
 			description: rocket.value.description,
 			first_flight: rocket.value.first_flight,
@@ -205,7 +226,9 @@ function toggleFavorite() {
 			mass: rocket.value.mass,
 			stages: rocket.value.stages,
 		})
+		snackbarMsg.value = 'Added to favorites'
 	}
+	snackbar.value = true
 }
 
 function formatDate(dateStr: string) {
